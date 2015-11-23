@@ -60,7 +60,7 @@ class F265(Codec):
 		os.system(self.clean_pattern)
 		os.chdir(cwd)
 		
-	def run(self,Yuv,qp):
+	def encode(self,Yuv,qp):
 		if not os.path.isdir(os.getcwd()+'/bitstreams'):
 			os.system('mkdir bitstreams')
 			
@@ -68,6 +68,9 @@ class F265(Codec):
 		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp,self.optargs,Yuv.path,bitstream_path)
 		print run_string
 		os.system(run_string)
+	
+	def decode(self, bitstream):
+		print >> stderr, 'Error: No decoder available for ', self.name
 	
 	def addParam(self, p, n_args, vals):
 		if n_args > 1:

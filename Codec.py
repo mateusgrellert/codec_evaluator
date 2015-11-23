@@ -10,7 +10,10 @@ class Codec:
 	def build(self):
 		raise NotImplementedError()
 	@abstractmethod
-	def run(self):
+	def encode(self):
+		raise NotImplementedError()
+	@abstractmethod
+	def decode(self):
 		raise NotImplementedError()
 	@abstractmethod
 	def addParam(self):
