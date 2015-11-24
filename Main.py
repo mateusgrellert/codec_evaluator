@@ -1,12 +1,13 @@
 import Codec
-import F265
+import X265
+import KVZ
 import Yuv
 
 yuv = Yuv.Yuv()
-f265 = F265.F265()
+kvz = KVZ.KVZ()
 yuv.initParams('/home/grellert/hm-cfgs/BQSquare.cfg')
 
-f265.build()
-f265.decode('str.bin')
-f265.encode(yuv,30)
+kvz.build()
+kvz.decode('str.bin')
+kvz.encode(yuv,30)
 
