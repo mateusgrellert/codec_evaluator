@@ -11,16 +11,19 @@ class KVZ(Codec):
 		self.build_pattern = 'make -j4'
 		self.clean_pattern = 'make clean'
 		self.bitstream_pattern = os.getcwd()+'/bitstreams/%s_%s_%sfr_qp%s.bin' #enc name, yuv name, nfr, qp
-		self.optargs = ' --gop 8'
-	
+		self.baseargs = ' --gop 8'
+		self.optargs = ''
+		self.parallelargs = ''
+		self.parallel_tools = '1110' # wpp, owf, tile, frame parallelism
+		
 		if not ASM:
-			self.optargs += ' --cpuid 0'
+			self.baseargs += ' --cpuid 0'
 
 		#w,h, nfr, fps, qp, optargs, inp,out
 		self.run_pattern = self.root_dir + 'kvazaar --input-res %dx%d -n %d --input-fps %d --qp %d %s -i %s -o %s'
 		 
 		# key => num_args, values
-		self.param_table = {'ref':					[1,	 [1,4,8,15], \
+		self.param_table = {'ref':					[1,	 [1,4,8,15]], \
 					   'no-deblock':				[0, ['no-deblock']], \
 					   'no-sao':					[0, ['no-sao']], \
 					   'no-rdoq':					[0, ['no-rdoq']], \
@@ -51,26 +54,44 @@ class KVZ(Codec):
 		os.system(self.clean_pattern)
 		os.chdir(cwd)
 		
+	def setYuvDim(self, w,h):
+		self.yuv_height = h
+		self.yuv_width = w
+		
+	def parallelize(self, wpp = 0, frame= 0, tile = 0, threads = 1, frame_threads = 1, rows = 1, cols = 1):
+		
+		self.parallelargs = ''
+		
+		if wpp:
+			self.parallelargs += ' --wpp'
+			if frame:
+				self.parallelargs += ' --owf ' + str(frame_threads)
+			else:
+				self.parallelargs += ' --owf 0'
+		else:
+			self.parallelargs += ' --owf 0'
+
+		if tile:
+			nrows = int(math.ceil(self.yuv_height/rows/64))*64 # must be multiple of CTU size / using ceil seems to yield better fps (MUST CHECK)
+			ncols = int(math.ceil(self.yuv_height/cols/64))*64
+			self.parallelargs += ' --tiles-width-split ' + ncols
+			self.parallelargs += ' --tiles-height-split ' + nrows
+
+		if wpp or frame or tile:
+			self.parallelargs += ' --threads ' + str(threads)
+		else:
+			self.parallelargs += ' --threads 0'
+			
+
 	def encode(self,Yuv,qp):
 		if not os.path.isdir(os.getcwd()+'/bitstreams'):
 			os.system('mkdir bitstreams')
 		bitstream_path = self.bitstream_pattern % (self.name, Yuv.name, Yuv.num_frames, qp)
-		
-		if WPP_PARALLELISM:
-			self.optargs += ' --wpp'
-			if FRAME_PARALLELISM:
-				self.optargs += ' --owf ' + str(N_FRAME_THREADS)
-		if TILE_PARALLELISM:
-			nrows = int(math.ceil(Yuv.height/TILE_ROWS/64))*64 # must be multiple of CTU size / using ceil seems to yield better fps (MUST CHECK)
-			ncols = int(math.ceil(Yuv.width/TILE_COLS/64))*64
-			self.optargs += ' --tiles-width-split ' + ncols
-			self.optargs += ' --tiles-height-split ' + nrows
+		args = ' '.join([self.baseargs,self.optargs,self.parallelargs])
 
-		if WPP_PARALLELISM or FRAME_PARALLELISM or TILE_PARALLELISM:
-			self.optargs += ' --threads ' + str(N_THREADS)
 		
 		#w,h, nfr, fps, qp, optargs, inp,out
-		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, self.optargs,Yuv.path,bitstream_path)
+		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path)
 		print run_string
 		os.system(run_string)
 	

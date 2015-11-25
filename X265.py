@@ -10,10 +10,13 @@ class X265(Codec):
 		self.build_pattern = 'make -j4'
 		self.clean_pattern = 'make clean'
 		self.bitstream_pattern = os.getcwd()+'/bitstreams/%s_%s_%sfr_qp%s.bin' #enc name, yuv name, nfr, qp
-		self.optargs = ' -psnr --scenecut 0'
-	
+		self.baseargs = ' --psnr --scenecut 0 --keyint -1'
+		self.parallelargs = ''
+		self.optargs = ''
+		self.parallel_tools = '1001' # wpp, owf, tile, frame parallelism
+		
 		if not ASM:
-			self.optargs += ' --no-asm'
+			self.baseargs += ' --no-asm'
 
 		#w,h, nfr, fps, qp, optargs, inp,out
 		self.run_pattern = self.root_dir + 'x265 --input-res %dx%d -f %d --fps %d --qp %d %s --input %s  -o %s'
@@ -73,22 +76,32 @@ class X265(Codec):
 		os.chdir(self.root_dir)
 		os.system(self.clean_pattern)
 		os.chdir(cwd)
-		
+	
+	def parallelize(self, wpp = 0, frame=0, threads = 1, frame_threads = 1):
+		self.parallelargs = ''
+		if wpp:
+			self.parallelargs += ' --wpp'
+		else:
+			self.parallelargs += ' --no-wpp'
+			
+		if frame:
+			self.parallelargs += ' --frame-threads ' + str(frame_threads)
+		else:
+			self.parallelargs += ' --frame-threads 1'
+			
+		if wpp or frame:
+			self.parallelargs += ' --threads ' + str(threads)
+		else:
+			self.parallelargs += ' --threads 1'
+
 	def encode(self,Yuv,qp):
 		if not os.path.isdir(os.getcwd()+'/bitstreams'):
 			os.system('mkdir bitstreams')
 		bitstream_path = self.bitstream_pattern % (self.name, Yuv.name, Yuv.num_frames, qp)
-		
-		if WPP_PARALLELISM:
-			self.optargs += ' --wpp'
-		if FRAME_PARALLELISM:
-			self.optargs += ' --frame-threads ' + str(N_FRAME_THREADS)
-			
-		if WPP_PARALLELISM or FRAME_PARALLELISM:
-			self.optargs += ' --threads ' + str(N_THREADS)
-		
+		args = ' '.join([self.baseargs,self.optargs,self.parallelargs])
+
 		#w,h, nfr, fps, qp, optargs, inp,out
-		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, self.optargs,Yuv.path,bitstream_path)
+		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path)
 		print run_string
 		os.system(run_string)
 	
@@ -96,6 +109,8 @@ class X265(Codec):
 		print >> stderr, 'Error: No decoder available for ', self.name
 	
 	def addParam(self, p, vals):
+		if p in self.optargs:
+			self.delParam(p)
 		n_args = self.param_table[p][0]
 		if n_args == 0:
 			self.optargs += ' --%s' % (vals)
