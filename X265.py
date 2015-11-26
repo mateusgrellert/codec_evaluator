@@ -101,7 +101,7 @@ class X265(Codec):
 
 		#w,h, nfr, fps, qp, optargs, inp,out
 		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path)
-		#print run_string
+		print run_string
 		os.system(run_string)
 		#self.parseOutput()
 	

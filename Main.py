@@ -4,6 +4,7 @@ import KVZ
 import HOMER
 import Yuv
 from Bjontegaard import bdrate
+from Typedef import *
 
 yuv = Yuv.Yuv()
 yuv.initParams(HOME_PATH+'/hm-cfgs/BQMall.cfg')
@@ -16,8 +17,8 @@ encoder_list = [x265, kvz, homer]
 ref_bitrate_vet = [5397.4200, 2462.7825, 1200.5250, 612.2025]
 ref_psnr_vet = [39.6266, 36.5677, 33.4729, 30.4879]
 
-print '\t'.join(x265.param_table['preset'][1][:6])
-for preset in x265.param_table['preset'][1][:6]:
+print '\t'.join(x265.param_table['preset'][1])
+for preset in x265.param_table['preset'][1]:
 	fps_vet = []
 	psnr_vet = []
 	bitrate_vet = []
