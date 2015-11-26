@@ -2,6 +2,6 @@ import os
 from abc import ABCMeta, abstractmethod
 from sys import stderr
 
-ASM = 1
+ASM = 0
 PARALLEL = 1
-BASE_YUV_PATH = '/home/grellert/origCfP/'
+BASE_YUV_PATH = '/Users/grellert/origCfP/cropped/'

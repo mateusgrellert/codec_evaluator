@@ -1,16 +1,17 @@
 from Typedef import *
 from Codec import Codec
+import re
 
 class X265(Codec):
 	def __init__(self):
 		self.type = 'encoder'
 		self.name = 'x265'
 		self.license = 'GPL2'
-		self.root_dir = '/home/grellert/codecs/encoders/x265/build/'
+		self.root_dir = '/Users/grellert/codecs/encoders/x265/build/'
 		self.build_pattern = 'make -j4'
 		self.clean_pattern = 'make clean'
 		self.bitstream_pattern = os.getcwd()+'/bitstreams/%s_%s_%sfr_qp%s.bin' #enc name, yuv name, nfr, qp
-		self.baseargs = ' --psnr --scenecut 0 --keyint -1'
+		self.baseargs = ' --psnr --psy-rd 0 --scenecut 0 --keyint -1'
 		self.parallelargs = ''
 		self.optargs = ''
 		self.parallel_tools = '1001' # wpp, owf, tile, frame parallelism
@@ -19,7 +20,7 @@ class X265(Codec):
 			self.baseargs += ' --no-asm'
 
 		#w,h, nfr, fps, qp, optargs, inp,out
-		self.run_pattern = self.root_dir + 'x265 --input-res %dx%d -f %d --fps %d --qp %d %s --input %s  -o %s'
+		self.run_pattern = self.root_dir + 'x265 --input-res %dx%d -f %d --fps %d --qp %d %s --input %s  -o %s 2> ' + self.name + '.txt'
 		 
 		# key => num_args, values
 		self.param_table = {'preset':				[1,	 ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow', 'placebo']], \
@@ -89,10 +90,7 @@ class X265(Codec):
 		else:
 			self.parallelargs += ' --frame-threads 1'
 			
-		if wpp or frame:
-			self.parallelargs += ' --threads ' + str(threads)
-		else:
-			self.parallelargs += ' --threads 1'
+		
 
 	def encode(self,Yuv,qp):
 		if not os.path.isdir(os.getcwd()+'/bitstreams'):
@@ -102,8 +100,9 @@ class X265(Codec):
 
 		#w,h, nfr, fps, qp, optargs, inp,out
 		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path)
-		print run_string
+		#print run_string
 		os.system(run_string)
+		#self.parseOutput()
 	
 	def decode(self, bitstream):
 		print >> stderr, 'Error: No decoder available for ', self.name
@@ -124,4 +123,24 @@ class X265(Codec):
 				del toks[toks.index(tok)]
 			
 		self.optargs = '--'.join(toks)
-	
+
+	def parseOutput(self):
+		f = open(self.name + '.txt', 'r')
+		lines = f.read()
+		f.close()
+		(ni,np,nb) = [int(x) for x in re.compile('frame\s+\w:\s+(\d+)').findall(lines)]
+		found = re.compile('PSNR\sMean:\sY:(\d+.\d+)\sU:(\d+.\d+)\sV:(\d+.\d+)').findall(lines)
+		
+		(ipsnry, ipsnru, ipsnrv) = [float(x) for x in found[0]]
+		(ppsnry, ppsnru, ppsnrv) = [float(x) for x in found[1]]
+		(bpsnry, bpsnru, bpsnrv) = [float(x) for x in found[2]]
+		
+		avg_psnry = (ipsnry*ni + ppsnry*np + bpsnry*nb) / sum([ni,np,nb])
+		avg_psnru = (ipsnru*ni + ppsnru*np + bpsnru*nb) / sum([ni,np,nb])
+		avg_psnrv = (ipsnrv*ni + ppsnrv*np + bpsnrv*nb) / sum([ni,np,nb])
+
+
+		(ibr,pbr,bbr) = [float(x) for x in re.compile('kb/s:\s+(\d+.\d+)\s+PSNR\sMean').findall(lines)]
+		avg_br = (ibr*ni + pbr*np + bbr*nb)/sum([ni,np,nb])
+		fps = float(re.compile('\((\d+.\d+) fps\)').findall(lines)[0])
+		return [avg_psnry, avg_br, fps]
