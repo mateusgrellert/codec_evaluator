@@ -1,7 +1,11 @@
 import os
 from abc import ABCMeta, abstractmethod
 from sys import stderr
+import platform
 
-ASM = 1
-
-BASE_YUV_PATH = '/home/grellert/origCfP/'
+ASM = 0
+PARALLEL = 1
+if platform.system() == 'Linux':
+	BASE_YUV_PATH = '/home/grellert/origCfP/cropped/'
+else:
+	BASE_YUV_PATH = '/Users/grellert/origCfP/cropped/'

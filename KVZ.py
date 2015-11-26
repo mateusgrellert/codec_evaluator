@@ -7,7 +7,7 @@ class KVZ(Codec):
 		self.type = 'encoder'
 		self.name = 'kvazaar'
 		self.license = 'GPL2'
-		self.root_dir = '/home/grellert/codecs/encoders/kvazaar/src/'
+		self.root_dir = HOME_PATH + '/codecs/encoders/kvazaar/src/'
 		self.build_pattern = 'make -j4'
 		self.clean_pattern = 'make clean'
 		self.bitstream_pattern = os.getcwd()+'/bitstreams/%s_%s_%sfr_qp%s.bin' #enc name, yuv name, nfr, qp

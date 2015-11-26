@@ -6,7 +6,7 @@ import Yuv
 from Bjontegaard import bdrate
 
 yuv = Yuv.Yuv()
-yuv.initParams('/Users/grellert/hm-cfgs/cropped/BQMall.cfg')
+yuv.initParams(HOME_PATH+'/hm-cfgs/BQMall.cfg')
 
 x265 = X265.X265()
 kvz = KVZ.KVZ()
@@ -16,14 +16,14 @@ encoder_list = [x265, kvz, homer]
 ref_bitrate_vet = [5397.4200, 2462.7825, 1200.5250, 612.2025]
 ref_psnr_vet = [39.6266, 36.5677, 33.4729, 30.4879]
 
-print '\t'.join(x265.param_table['preset'][1])
-for preset in x265.param_table['preset'][1]:
+print '\t'.join(x265.param_table['preset'][1][:6])
+for preset in x265.param_table['preset'][1][:6]:
 	fps_vet = []
 	psnr_vet = []
 	bitrate_vet = []
 	for qp in [22,27,32,37]:
 		x265.addParam('preset', preset)
-		x265.parallelize()
+		x265.parallelize(wpp=1, frame=1, threads = 10, frame_threads = 0)
 		x265.encode(yuv, qp)
 		[avg_psnry, avg_br, fps] = x265.parseOutput()
 		psnr_vet.append(avg_psnry)

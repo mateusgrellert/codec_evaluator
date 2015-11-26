@@ -7,7 +7,8 @@ class X265(Codec):
 		self.type = 'encoder'
 		self.name = 'x265'
 		self.license = 'GPL2'
-		self.root_dir = '/Users/grellert/codecs/encoders/x265/build/'
+		
+		self.root_dir = HOME_PATH +'/codecs/encoders/x265/build/'
 		self.build_pattern = 'make -j4'
 		self.clean_pattern = 'make clean'
 		self.bitstream_pattern = os.getcwd()+'/bitstreams/%s_%s_%sfr_qp%s.bin' #enc name, yuv name, nfr, qp

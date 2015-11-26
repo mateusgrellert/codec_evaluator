@@ -7,7 +7,7 @@ class Yuv:
 		self.height = 480
 		self.num_frames = 64
 		self.fps = 60
-		self.name = 'BQMall'
+		self.name = 'BQMall_832x480_60'
 		self.path = '/home/grellert/origCfP/BQMall_832x480_60.yuv'
 		
 	def initParams(self, cfg_path):
