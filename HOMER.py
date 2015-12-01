@@ -14,7 +14,7 @@ class Homer(Codec):
 		self.optargs = ''
 		self.parallelargs = ''
 		self.yuv_fps = 60
-		self.parallel_tools = '1001' # wpp, owf, tile, frame parallelism
+		self.parallel_tools = 0x9 # '1001'  wpp, owf, tile, frame parallelism
 		
 		if ASM:
 			self.baseargs += ' -sse 1'

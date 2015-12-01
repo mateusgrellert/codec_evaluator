@@ -32,6 +32,7 @@ for encoder in encoder_list:
 	for qp in [22,27,32,37]:
 		if encoder.name == 'kvazaar':
 			encoder.setYuvDimAndFPS(yuv.width, yuv.height, yuv.fps)
+		if encoder.parallel_tools == '1': # wpp, owf, tile, frame parallelism
 		encoder.parallelize(wpp=1, frame=1, threads = 10, frame_threads = 3)
 		encoder.encode(yuv,qp)
 		[avg_psnry, avg_br, fps] = encoder.parseOutput()
