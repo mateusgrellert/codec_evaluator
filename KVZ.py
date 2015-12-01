@@ -16,11 +16,13 @@ class KVZ(Codec):
 		self.parallelargs = ''
 		self.parallel_tools = '1110' # wpp, owf, tile, frame parallelism
 		
-		if not ASM:
+		if ASM:
+			self.baseargs += ' --cpuid 1'
+		else:
 			self.baseargs += ' --cpuid 0'
 
 		#w,h, nfr, fps, qp, optargs, inp,out
-		self.run_pattern = self.root_dir + 'kvazaar --input-res %dx%d -n %d --input-fps %d --qp %d %s -i %s -o %s'
+		self.run_pattern = self.root_dir + 'kvazaar --input-res %dx%d -n %d --input-fps %d --qp %d %s -i %s -o %s 2> ' + self.name + '.txt'
 		 
 		# key => num_args, values
 		self.param_table = {'ref':					[1,	 [1,4,8,15]], \
@@ -54,9 +56,10 @@ class KVZ(Codec):
 		os.system(self.clean_pattern)
 		os.chdir(cwd)
 		
-	def setYuvDim(self, w,h):
+	def setYuvDimAndFPS(self, w,h,fps):
 		self.yuv_height = h
 		self.yuv_width = w
+		self.yuv_fps = fps
 		
 	def parallelize(self, wpp = 0, frame= 0, tile = 0, threads = 1, frame_threads = 1, rows = 1, cols = 1):
 		
@@ -87,7 +90,7 @@ class KVZ(Codec):
 		if not os.path.isdir(os.getcwd()+'/bitstreams'):
 			os.system('mkdir bitstreams')
 		bitstream_path = self.bitstream_pattern % (self.name, Yuv.name, Yuv.num_frames, qp)
-		args = ' '.join([self.baseargs,self.optargs,self.parallelargs])
+		args = (' '.join([self.baseargs,self.optargs,self.parallelargs])).strip('  ')
 
 		
 		#w,h, nfr, fps, qp, optargs, inp,out
@@ -118,3 +121,14 @@ class KVZ(Codec):
 			
 		self.optargs = '--'.join(toks)
 			
+	def parseOutput(self):
+		f = open(self.name + '.txt', 'r')
+		lines = f.read()
+		f.close()
+#		 Processed 64 frames,    6963776 bits AVG PSNR: 38.7552 42.4212 43.3029
+		(nfr, bits) = [int(x) for x in re.compile('Processed\s+(\d+)\s+frames,\s+(\d+)\s+bits').findall(lines)[0]]	
+		(avg_psnry, avg_psnru,avg_psnrv) = [float(x) for x in re.compile('AVG\s+PSNR:\s+(\d+.\d+)\s+(\d+.\d+)\s+(\d+.\d+)').findall(lines)[0]]
+		avg_br = float(bits)/(nfr/self.yuv_fps)/1000.0
+		fps = float(re.compile('FPS:\s+(\d+.\d+)').findall(lines)[0])
+
+		return [avg_psnry, avg_br, fps]

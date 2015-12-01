@@ -45,6 +45,7 @@ def bdrint(log_rate, psnr, min_int, max_int):
 	result = 0.0
 	
 	log_rate.reverse()
+	
 	psnr.reverse()
 	
 	
@@ -80,6 +81,7 @@ def bdrint(log_rate, psnr, min_int, max_int):
 			result = result + (s1*s1-s0*s0)*d[i]/2
 			result = result + (s1*s1*s1 - s0*s0*s0)*c[i]/3
 			result = result + (s1*s1*s1*s1 - s0*s0*s0*s0)*b[i]/4
+	psnr.reverse()
 	return result
 		
 
@@ -97,6 +99,7 @@ def bdrate(bitRate_1, bitRate_2, PSNR_1, PSNR_2): # four values wrapped in each 
   log_2		= []
   intervals = []
   MAX_EXP	= 200
+ # print bitRate_1, '\n', bitRate_2,'\n', PSNR_1,'\n', PSNR_2,'\n'
   
  # bitRate_1 = appendParams(metrics_1, 0)
  # PSNR_1 = appendParams(metrics_1, yuv_sel)

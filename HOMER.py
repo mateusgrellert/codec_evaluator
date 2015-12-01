@@ -13,13 +13,16 @@ class Homer(Codec):
 		self.baseargs = ' -intra_period 0 -bitrate_mode 0 -scene_change 0'
 		self.optargs = ''
 		self.parallelargs = ''
+		self.yuv_fps = 60
 		self.parallel_tools = '1001' # wpp, owf, tile, frame parallelism
 		
-		if not ASM:
+		if ASM:
+			self.baseargs += ' -sse 1'
+		else:
 			self.baseargs += ' -sse 0'
 
 		#w,h, nfr, fps, qp, optargs, inp,out
-		self.run_pattern = self.root_dir + '/homer_app/Release/homer_app -widthxheight %dx%d -n_frames %d -frame_rate %d -qp %d %s -i %s -o %s'
+		self.run_pattern = self.root_dir + 'homer_app/Release/homer_app -widthxheight %dx%d -n_frames %d -frame_rate %d -qp %d %s -i %s -o %s > ' + self.name + '.txt 2>&1'
 		 
 		# key => num_args, values
 		self.param_table = {'cu-size':					[1,	[16,32,64]], \
@@ -70,7 +73,7 @@ class Homer(Codec):
 		bitstream_path = self.bitstream_pattern % (self.name, Yuv.name, Yuv.num_frames, qp)
 		
 		args = ' '.join([self.baseargs,self.optargs,self.parallelargs]).strip('  ')
-		
+		self.yuv_fps = Yuv.fps
 		#w,h, nfr, fps, qp, optargs, inp,out
 		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path)
 		print run_string
@@ -92,4 +95,19 @@ class Homer(Codec):
 				del toks[toks.index(tok)]
 			
 		self.optargs = '-'.join(toks)
+		
+	def parseOutput(self):
+		f = open(self.name + '.txt', 'r')
+		lines = f.read()
+		f.close()
+# engine:1, frame:31, P, bits:171040,PSNRY: 38.89, PSNRU: 41.83,PSNRV: 42.82, Average PSNRY: 13.39, PSNRU: 14.48,PSNRV: 14.89, vbv: 0.35, qp: 22, pts: 31, 
+		bits = sum([int(x) for x in re.compile('bits:(\d+),').findall(lines)])
+		psnry = [float(x) for x in re.compile('PSNRY:\s+(\d+.\d+),').findall(lines)]
+		avg_psnry = sum(psnry)/len(psnry)
+#		64 frames in 3046 milliseconds: 21.011162 fps
+		nfr = int(re.compile('\s+(\d+)\s+frames\s+in').findall(lines)[0])
+		avg_br = float(bits)/(nfr/self.yuv_fps)/1000.0
+		fps = float(re.compile('(\d+.\d+)\s+fps').findall(lines)[0])
+
+		return [avg_psnry, avg_br, fps]
 	
