@@ -14,7 +14,7 @@ class KVZ(Codec):
 		self.baseargs = ' --gop 8'
 		self.optargs = ''
 		self.parallelargs = ''
-		self.parallel_tools = 0x10 # '1110' # wpp, owf, tile, frame parallelism
+		self.parallel_tools = 0xE # '1110' # wpp, owf, tile, frame parallelism
 		
 		if ASM:
 			self.baseargs += ' --cpuid 1'
