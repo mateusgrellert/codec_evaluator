@@ -16,12 +16,12 @@ class X265(Codec):
 		self.parallelargs = ''
 		self.optargs = ''
 		self.parallel_tools = '1001' # wpp, owf, tile, frame parallelism
-		
+		self.output_txt = self.name + '.txt'
 		if not ASM:
 			self.baseargs += ' --no-asm'
 
-		#w,h, nfr, fps, qp, optargs, inp,out
-		self.run_pattern = self.root_dir + 'x265 --input-res %dx%d -f %d --fps %d --qp %d %s --input %s  -o %s 2> ' + self.name + '.txt'
+		#w,h, nfr, fps, qp, optargs, inp,out, output text
+		self.run_pattern = self.root_dir + 'x265 --input-res %dx%d -f %d --fps %d --qp %d %s --input %s  -o %s > %s 2>&1'
 		 
 		# key => num_args, values
 		self.param_table = {'preset':				[1,	 ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow', 'placebo']], \
@@ -79,7 +79,7 @@ class X265(Codec):
 		os.system(self.clean_pattern)
 		os.chdir(cwd)
 	
-	def parallelize(self, wpp = 0, frame=0, threads = 1, frame_threads = 1):
+	def parallelize(self, wpp = 0, frame= 0, tile = 0, threads = 1, frame_threads = 1, rows = 1, cols = 1):
 		self.parallelargs = ''
 		if wpp:
 			self.parallelargs += ' --wpp'
@@ -100,8 +100,9 @@ class X265(Codec):
 		args = ' '.join([self.baseargs,self.optargs,self.parallelargs])
 
 		#w,h, nfr, fps, qp, optargs, inp,out
-		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path)
-		print run_string
+		#self.output_txt = re.sub('_+', '_', self.name + '_'+ '_'.join(args.replace('-','').split(' ')) + '.txt')
+		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path, self.output_txt)
+		#print run_string
 		os.system(run_string)
 		#self.parseOutput()
 	
@@ -126,22 +127,26 @@ class X265(Codec):
 		self.optargs = '--'.join(toks)
 
 	def parseOutput(self):
-		f = open(self.name + '.txt', 'r')
+		f = open(self.output_txt, 'r')
 		lines = f.read()
 		f.close()
-		(ni,np,nb) = [int(x) for x in re.compile('frame\s+\w:\s+(\d+)').findall(lines)]
-		found = re.compile('PSNR\sMean:\sY:(\d+.\d+)\sU:(\d+.\d+)\sV:(\d+.\d+)').findall(lines)
+		try:
+			(ni,np,nb) = [int(x) for x in re.compile('frame\s+\w:\s+(\d+)').findall(lines)]
+			found = re.compile('PSNR\sMean:\sY:(\d+.\d+)\sU:(\d+.\d+)\sV:(\d+.\d+)').findall(lines)
 		
-		(ipsnry, ipsnru, ipsnrv) = [float(x) for x in found[0]]
-		(ppsnry, ppsnru, ppsnrv) = [float(x) for x in found[1]]
-		(bpsnry, bpsnru, bpsnrv) = [float(x) for x in found[2]]
+			(ipsnry, ipsnru, ipsnrv) = [float(x) for x in found[0]]
+			(ppsnry, ppsnru, ppsnrv) = [float(x) for x in found[1]]
+			(bpsnry, bpsnru, bpsnrv) = [float(x) for x in found[2]]
 		
-		avg_psnry = (ipsnry*ni + ppsnry*np + bpsnry*nb) / sum([ni,np,nb])
-		avg_psnru = (ipsnru*ni + ppsnru*np + bpsnru*nb) / sum([ni,np,nb])
-		avg_psnrv = (ipsnrv*ni + ppsnrv*np + bpsnrv*nb) / sum([ni,np,nb])
+			avg_psnry = (ipsnry*ni + ppsnry*np + bpsnry*nb) / sum([ni,np,nb])
+			avg_psnru = (ipsnru*ni + ppsnru*np + bpsnru*nb) / sum([ni,np,nb])
+			avg_psnrv = (ipsnrv*ni + ppsnrv*np + bpsnrv*nb) / sum([ni,np,nb])
 
 
-		(ibr,pbr,bbr) = [float(x) for x in re.compile('kb/s:\s+(\d+.\d+)\s+PSNR\sMean').findall(lines)]
-		avg_br = (ibr*ni + pbr*np + bbr*nb)/sum([ni,np,nb])
-		fps = float(re.compile('\((\d+.\d+) fps\)').findall(lines)[0])
+			(ibr,pbr,bbr) = [float(x) for x in re.compile('kb/s:\s+(\d+.\d+)\s+PSNR\sMean').findall(lines)]
+			avg_br = (ibr*ni + pbr*np + bbr*nb)/sum([ni,np,nb])
+			fps = float(re.compile('\((\d+.\d+) fps\)').findall(lines)[0])
+		except:
+			return [None, None, None]
+
 		return [avg_psnry, avg_br, fps]

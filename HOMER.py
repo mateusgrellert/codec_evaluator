@@ -15,17 +15,17 @@ class Homer(Codec):
 		self.parallelargs = ''
 		self.yuv_fps = 60
 		self.parallel_tools = 0x9 # '1001'  wpp, owf, tile, frame parallelism
-		
+		self.output_txt = self.name + '.txt'
 		if ASM:
 			self.baseargs += ' -sse 1'
 		else:
 			self.baseargs += ' -sse 0'
 
-		#w,h, nfr, fps, qp, optargs, inp,out
-		self.run_pattern = self.root_dir + 'homer_app/Release/homer_app -widthxheight %dx%d -n_frames %d -frame_rate %d -qp %d %s -i %s -o %s > ' + self.name + '.txt 2>&1'
+		#w,h, nfr, fps, qp, optargs, inp,out, text output
+		self.run_pattern = self.root_dir + 'homer_app/Release/homer_app -widthxheight %dx%d -n_frames %d -frame_rate %d -qp %d %s -i %s -o %s > %s 2>&1'
 		 
 		# key => num_args, values
-		self.param_table = {'cu-size':					[1,	[16,32,64]], \
+		self.param_table = {'cu_size':					[1,	[16,32,64]], \
 					   'motion_estimation_precision':	[1, [0,1,2]], \
 					   'max_pred_depth':				[1, [0,1,2,3,4]], \
 					   'max_intra_tr_depth':			[1, [0,1,2,3,4]], \
@@ -52,7 +52,7 @@ class Homer(Codec):
 		os.system(self.clean_pattern)
 		os.chdir(cwd)
 		
-	def parallelize(self, wpp = 0, frame = 0, threads = 1, frame_threads = 1):
+	def parallelize(self, wpp = 0, frame= 0, tile = 0, threads = 1, frame_threads = 1, rows = 1, cols = 1):
 		self.parallelargs = ''
 		if wpp:
 			self.parallelargs += ' -n_wpp_threads ' + str(threads - frame_threads) 
@@ -75,8 +75,9 @@ class Homer(Codec):
 		args = ' '.join([self.baseargs,self.optargs,self.parallelargs]).strip('  ')
 		self.yuv_fps = Yuv.fps
 		#w,h, nfr, fps, qp, optargs, inp,out
-		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path)
-		print run_string
+		#self.output_txt = re.sub('_+', '_', self.name + '_'+ '_'.join(args.replace('-','').split(' ')) + '.txt')
+		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path, self.output_txt)
+		#print run_string
 		os.system(run_string)
 	
 	def decode(self, bitstream):
@@ -96,18 +97,28 @@ class Homer(Codec):
 			
 		self.optargs = '-'.join(toks)
 		
+	def generateRandomCfg(self):	
+		cfg = []
+		for p in self.param_table:
+			cfg.append([p,str(random.choice(self.param_table[p][1]))])
+		return cfg
+
+	
 	def parseOutput(self):
-		f = open(self.name + '.txt', 'r')
+		f = open(self.output_txt, 'r')
 		lines = f.read()
 		f.close()
 # engine:1, frame:31, P, bits:171040,PSNRY: 38.89, PSNRU: 41.83,PSNRV: 42.82, Average PSNRY: 13.39, PSNRU: 14.48,PSNRV: 14.89, vbv: 0.35, qp: 22, pts: 31, 
-		bits = sum([int(x) for x in re.compile('bits:(\d+),').findall(lines)])
-		psnry = [float(x) for x in re.compile('PSNRY:\s+(\d+.\d+),').findall(lines)]
-		avg_psnry = sum(psnry)/len(psnry)
-#		64 frames in 3046 milliseconds: 21.011162 fps
-		nfr = int(re.compile('\s+(\d+)\s+frames\s+in').findall(lines)[0])
-		avg_br = float(bits)/(nfr/self.yuv_fps)/1000.0
-		fps = float(re.compile('(\d+.\d+)\s+fps').findall(lines)[0])
+		try:
+			bits = sum([int(x) for x in re.compile('bits:(\d+),').findall(lines)])
+			psnry = [float(x) for x in re.compile('PSNRY:\s+(\d+.\d+),').findall(lines)]
+			avg_psnry = sum(psnry)/len(psnry)
+	#		64 frames in 3046 milliseconds: 21.011162 fps
+			nfr = int(re.compile('\s+(\d+)\s+frames\s+in').findall(lines)[0])
+			avg_br = float(bits)/(nfr/self.yuv_fps)/1000.0
+			fps = float(re.compile('(\d+.\d+)\s+fps').findall(lines)[0])
+		except:
+			return [None, None, None]
 
 		return [avg_psnry, avg_br, fps]
 	

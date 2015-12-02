@@ -1,26 +1,0 @@
-yuv  [info]: 832x480 fps 60000/1000 i420p8 frames 0 - 63 of 601
-raw  [info]: output file: /home/grellert/codecs/codec_evaluator/bitstreams/x265_BQMall_832x480_60_64fr_qp37.bin
-x265 [info]: HEVC encoder version 1.8+127-687f397dcd65
-x265 [info]: build info [Linux][GCC 4.8.4][64 bit] 8bit
-x265 [info]: using cpu capabilities: none!
-x265 [info]: Main profile, Level-3.1 (Main tier)
-x265 [info]: Thread pool created using 8 threads
-x265 [info]: frame threads / pool features       : 3 / wpp(15 rows)
-x265 [warning]: Source height < 720p; disabling lookahead-slices
-x265 [info]: Coding QT: max CU size, min CU size : 32 / 8
-x265 [info]: Residual QT: max TU size, max depth : 32 / 1 inter / 1 intra
-x265 [info]: ME / range / subpel / merge         : hex / 57 / 1 / 2
-x265 [info]: Keyframe min / max / scenecut       : disabled
-x265 [info]: Lookahead / bframes / badapt        : 15 / 4 / 0
-x265 [info]: b-pyramid / weightp / weightb       : 1 / 1 / 0
-x265 [info]: References / ref-limit  cu / depth  : 1 / 0 / 0
-x265 [info]: Rate Control                        : CQP-37
-x265 [info]: tools: rd=2 early-skip signhide tmvp fast-intra
-x265 [info]: tools: strong-intra-smoothing deblock sao
-[1.6%] 1/64 frames, 5.84 fps, 9347.52 kb/s, eta 0:00:10  [26.6%] 17/64 frames, 37.76 fps, 1061.76 kb/s, eta 0:00:01  [45.3%] 29/64 frames, 40.29 fps, 924.61 kb/s, eta 0:00:00  [60.9%] 39/64 frames, 39.90 fps, 920.28 kb/s, eta 0:00:00  [76.6%] 49/64 frames, 39.24 fps, 935.29 kb/s, eta 0:00:00  [92.2%] 59/64 frames, 39.04 fps, 939.21 kb/s, eta 0:00:00                                                                                  x265 [info]: frame I:      1, Avg QP:34.00  kb/s: 8868.00   PSNR Mean: Y:33.674 U:38.061 V:38.701
-x265 [info]: frame P:     13, Avg QP:37.00  kb/s: 2073.67   PSNR Mean: Y:31.004 U:37.298 V:37.342
-x265 [info]: frame B:     50, Avg QP:38.74  kb/s: 454.40    PSNR Mean: Y:30.666 U:37.215 V:37.034
-x265 [info]: Weighted P-Frames: Y:0.0% UV:0.0%
-x265 [info]: consecutive B-frames: 7.1% 0.0% 7.1% 0.0% 85.7% 
-
-encoded 64 frames in 1.60s (39.93 fps), 914.78 kb/s, Avg QP:38.31, Global PSNR: 32.382
