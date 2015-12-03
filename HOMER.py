@@ -16,6 +16,7 @@ class Homer(Codec):
 		self.yuv_fps = 60
 		self.parallel_tools = 0x9 # '1001'  wpp, owf, tile, frame parallelism
 		self.output_txt = self.name + '.txt'
+		self.runid = 0
 		if ASM:
 			self.baseargs += ' -sse 1'
 		else:
@@ -27,13 +28,13 @@ class Homer(Codec):
 		# key => num_args, values
 		self.param_table = {'cu_size':					[1,	[16,32,64]], \
 					   'motion_estimation_precision':	[1, [0,1,2]], \
-					   'max_pred_depth':				[1, [0,1,2,3,4]], \
+					   'max_pred_depth':				[1, [1,2,3,4]], \
 					   'max_intra_tr_depth':			[1, [0,1,2,3,4]], \
 					   'max_inter_tr_depth':			[1, [0,1,2,3,4]], \
 					   'sign_hiding':					[1, [0,1]], \
 					   'sao':							[1, [0,1]], \
 					   'performance_mode':				[1, [0,1,2]], \
-					   'rd':							[1, [0,1]], \
+					   'rd_mode':						[1, [0,1]], \
 					}
 				
 				
@@ -71,14 +72,20 @@ class Homer(Codec):
 		if not os.path.isdir(os.getcwd()+'/bitstreams'):
 			os.system('mkdir bitstreams')
 		bitstream_path = self.bitstream_pattern % (self.name, Yuv.name, Yuv.num_frames, qp)
-		
+
+		self.output_txt = self.name + '_run'+str(self.runid)+'_QP'+str(qp)+'.txt'
+		if qp == 37:
+			self.runid += 1
 		args = ' '.join([self.baseargs,self.optargs,self.parallelargs]).strip('  ')
 		self.yuv_fps = Yuv.fps
 		#w,h, nfr, fps, qp, optargs, inp,out
 		#self.output_txt = re.sub('_+', '_', self.name + '_'+ '_'.join(args.replace('-','').split(' ')) + '.txt')
 		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path, self.output_txt)
-		#print run_string
+		print run_string
 		os.system(run_string)
+		f = open(self.output_txt,'a')
+		f.write('\n'+run_string)
+		f.close()
 	
 	def decode(self, bitstream):
 		print >> stderr, 'Error: No decoder available for ', self.name

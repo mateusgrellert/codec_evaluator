@@ -17,7 +17,7 @@ kvz = KVZ.KVZ()
 homer = HOMER.Homer()
 
 
-encoder_list = [homer]
+encoder_list = [kvz]
 #encoder_list = [kvz,homer]
 #encoder_list = [homer,kvz,x265]
 
@@ -31,37 +31,42 @@ for encoder in encoder_list:
 	fps_vet = []
 	psnr_vet = []
 	bitrate_vet = []
-	invalid_cfgs = {}
+	invalid_cfgs = []
 
-	for i in range(0,10):
+	for i in range(0,50):
 		curr_cfg = encoder.generateRandomCfg()
-		#print cfg
+		curr_cfg_str = '_'.join(flatten(curr_cfg))
+		
+		print curr_cfg_str
 		for pv in curr_cfg:
-			[p,v] = pv
+			if len(pv) > 1:
+				[p,v] = pv
+			else:
+				p,v = pv[0],pv[0]
 			encoder.addParam(p,v)
 		fps_vet = []
 		psnr_vet = []
 		bitrate_vet = []
 		for qp in [22,27,32,37]:
 			encoder.parallelize()
-			encoder.encode(yuv,qp)
+			encoder.encode(yuv,qp,curr_cfg_str)
 			[avg_psnry, avg_br, fps] = encoder.parseOutput()
 			if avg_psnry != None:
 				psnr_vet.append(avg_psnry)
 				bitrate_vet.append(avg_br)
 				fps_vet.append(fps)
-			else:
-				break
+
 			
 		if psnr_vet:
-			curr_cfg_str = '_'.join([str(item) for sublist in curr_cfg for item in sublist])
-			print curr_cfg_str
 			print encoder.optargs
 			for b,p,f in zip(bitrate_vet, psnr_vet,fps_vet):
 				print '%.2f\t%.3f\t\t\t\t\t%.3f' % (b,p,f)
 			results_dict[curr_cfg_str] = [bdrate(ref_bitrate_vet, bitrate_vet, ref_psnr_vet, psnr_vet)/100.0,sum(fps_vet)/len(fps_vet)]
 		else:
-			invalid_cfgs.append(curr_cfg_str)
+			invalid_cfgs.append(encoder.run_string)
+		
+	for cfg, brfps in results_dict.items():
+		print cfg, '\t', brfps[0], '\t', brfps[1]
 
 
 """

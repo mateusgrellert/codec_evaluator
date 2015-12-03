@@ -16,6 +16,8 @@ class KVZ(Codec):
 		self.parallelargs = ''
 		self.parallel_tools = 0xE # '1110' # wpp, owf, tile, frame parallelism
 		self.output_txt = self.name + '.txt'
+		self.runid = 0
+
 		if ASM:
 			self.baseargs += ' --cpuid 1'
 		else:
@@ -86,18 +88,30 @@ class KVZ(Codec):
 			self.parallelargs += ' --threads 0'
 			
 
-	def encode(self,Yuv,qp):
+	def encode(self,Yuv,qp, cfg_string):
 		if not os.path.isdir(os.getcwd()+'/bitstreams'):
 			os.system('mkdir bitstreams')
+		if not os.path.isdir(os.getcwd()+'/outputs'):
+			os.system('mkdir outputs')
+			if not os.path.isdir(os.getcwd()+'/outputs/'+Yuv.name):
+				os.system('mkdir /outputs/'+Yuv.name)
 		bitstream_path = self.bitstream_pattern % (self.name, Yuv.name, Yuv.num_frames, qp)
 		args = (' '.join([self.baseargs,self.optargs,self.parallelargs])).strip('  ')
-
+		code = zlibCompress(cfg_string)
+		self.output_txt = '%s_%s_QP%d.txt'% (self.name, cfg_string, qp)
+		
+		if qp == 37:
+			self.runid += 1
+			
 		#self.output_txt = re.sub('_+', '_', self.name + '_'+ '_'.join(args.replace('-','').split(' ')) + '.txt')
 		#w,h, nfr, fps, qp, optargs, inp,out
-		run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path,self.output_txt)
+		self.run_string = self.run_pattern % (Yuv.width, Yuv.height, Yuv.num_frames, Yuv.fps, qp, args,Yuv.path,bitstream_path,self.output_txt)
 		#print run_string
-		os.system(run_string)
-	
+		os.system(self.run_string)	
+		f = open(self.output_txt,'a')
+		f.write('\n'+self.run_string)
+		f.close()
+		
 	def decode(self, bitstream):
 		print >> stderr, 'Error: No decoder available for ', self.name
 	
@@ -128,7 +142,7 @@ class KVZ(Codec):
 			if n_args < 2:
 				val = str(random.choice(self.param_table[p][1]))
 				if val != '':
-					cfg.append([p,val])
+					cfg.append([p])
 			elif n_args == 2:
 				val1 = str(random.choice(self.param_table[p][1]))
 				val1_idx = self.param_table[p][1].index(int(val1))
